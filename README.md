@@ -387,12 +387,6 @@ Get-PnpDevice | Where-Object {$_.Status -eq "Error"} | Select FriendlyName, Inst
 
 ---
 
-## Références
-
-- [Documentation Microsoft Windows Server Core](https://docs.microsoft.com/fr-fr/windows-server/administration/server-core/server-core-overview)
-- [Proxmox VE Documentation](https://pve.proxmox.com/wiki/Main_Page)
-- [VirtIO Drivers](https://pve.proxmox.com/wiki/Windows_VirtIO_Drivers)
-- [Guide ANSSI Hygiène Informatique](https://www.ssi.gouv.fr/guide/guide-dhygiene-informatique/)
 
 ---
 
