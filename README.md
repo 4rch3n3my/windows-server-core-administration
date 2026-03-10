@@ -30,7 +30,7 @@ Simuler un environnement Windows Server de production réaliste pour monter en c
 
 | Étape | Contenu | Statut |
 |---|---|---|
-| [Étape 1 — Déploiement](./etape1-deploiement/) | VM Proxmox, drivers VirtIO, AD DS, GPO, sauvegardes | ✅ Terminé |
+| [Étape 1 — Déploiement](./Etape1_Déploiement-serverCore/) | VM Proxmox, drivers VirtIO, AD DS, GPO, sauvegardes | ✅ Terminé |
 | [Étape 2 — AD Avancé](./etape2-ad-avance/) | RODC, délégation de contrôle, jonction de poste, GPO avancées | 🔄 En cours |
 | [Étape 3 — Sécurité SI](./etape3-securite/) | Firewall Windows, audit, supervision, conformité ANSSI | ⏳ À venir |
 | [Étape 4 — Azure AD & M365](./etape4-azure-ad/) | Azure AD Connect, Intune, Exchange Online, Teams | ⏳ À venir |
