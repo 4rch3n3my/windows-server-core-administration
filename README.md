@@ -110,7 +110,7 @@ Get-WindowsUpdate -AcceptAll -Install -AutoReboot
 ```
 
 
-### 6. Configuration réseau via PowerShell
+### 5. Configuration réseau via PowerShell
 
 ```powershell
 # Lister les interfaces réseau disponibles
@@ -134,7 +134,7 @@ Set-DnsClientServerAddress -InterfaceAlias "Ethernet" `
 Rename-Computer -NewName "SRV-CORE" -Restart
 ```
 
-### 7. Installation du rôle AD DS
+### 6. Installation du rôle AD DS
 
 ```powershell
 # Installer le rôle Active Directory Domain Services
@@ -164,7 +164,7 @@ Get-Service ADWS, DNS, Netlogon, NTDS | Select Name, Status
 Get-ADDomain
 ```
 
-### 8. Structure Active Directory — OUs, Utilisateurs, Groupes
+### 7. Structure Active Directory — OUs, Utilisateurs, Groupes
 
 ```powershell
 # Créer les unités d'organisation (OUs)
@@ -236,7 +236,7 @@ Get-ADGroupMember -Identity "GRP-Informatique" | Select Name
 >   -TargetPath "OU=Informatique,DC=lab,DC=local"
 > ```
 
-### 9. Configuration des GPO
+### 8. Configuration des GPO
 
 ```powershell
 # Installer la console de gestion des GPO
@@ -272,7 +272,7 @@ Set-GPRegistryValue -Name "Securite-Postes" `
   -Value 1
 ```
 
-### 10. Politique de mot de passe et verrouillage de compte
+### 9. Politique de mot de passe et verrouillage de compte
 
 ```powershell
 # Configurer la politique de mot de passe du domaine
@@ -302,7 +302,7 @@ Set-ADDefaultDomainPasswordPolicy -Identity "lab.local" `
 Get-ADDefaultDomainPasswordPolicy -Identity "lab.local" | Format-List *
 ```
 
-### 11. Configuration des sauvegardes Windows Server
+### 10. Configuration des sauvegardes Windows Server
 
 ```powershell
 # Installer la fonctionnalité de sauvegarde
