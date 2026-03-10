@@ -355,16 +355,6 @@ Get-WBSummary
 
 ---
 
-## Scripts utiles
-
-| Script | Description |
-|---|---|
-| `export-users.ps1` | Export CSV de tous les utilisateurs AD |
-| `inactive-accounts.ps1` | Rapport comptes inactifs depuis 90 jours |
-| `reset-password.ps1` | Reset mdp en masse sur une OU |
-| `backup-check.ps1` | Vérification état des sauvegardes |
-
----
 
 ## Commandes de diagnostic fréquentes
 
