@@ -82,20 +82,33 @@ Get-PnpDevice | Where-Object {$_.Status -eq "Error"} | Select FriendlyName, Inst
 
 ```cmd
 # Outil de configuration de base en mode Core
+# Permet de configurer les paramètres essentiels sans interface graphique
 sconfig
 ```
 
-Éléments configurés :
-- Nom du serveur : SRV-CORE-01
-- Adresse IP statique
-- Activation bureau à distance (RDP)
-- Mises à jour Windows
+Via sconfig, l'IP statique et le DNS ont été configurés :
+- IP : `192.168.1.60`
+- DNS : `1.1.1.1`
 
-### 5. Passage sur PowerShell
-
-```cmd
-powershell
+```powershell
+# Renommer le serveur
+# -NewName : nom souhaité pour le serveur
+# -Restart : redémarre automatiquement pour appliquer le changement
+Rename-Computer -NewName "SRV-CORE-01" -Restart
 ```
+
+```powershell
+# Installer le module de gestion des mises à jour Windows
+# -Force : installe sans confirmation même si déjà présent
+Install-Module PSWindowsUpdate -Force
+
+# Lancer et installer toutes les mises à jour disponibles
+# -AcceptAll : accepte toutes les mises à jour sans confirmation manuelle
+# -Install : installe directement sans étape intermédiaire
+# -AutoReboot : redémarre automatiquement si une mise à jour l'exige
+Get-WindowsUpdate -AcceptAll -Install -AutoReboot
+```
+
 
 ### 6. Configuration réseau via PowerShell
 
