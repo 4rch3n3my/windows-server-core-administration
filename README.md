@@ -122,7 +122,7 @@ Get-NetAdapter
 # -PrefixLength : masque réseau en notation CIDR (24 = 255.255.255.0)
 # -DefaultGateway : passerelle par défaut
 New-NetIPAddress -InterfaceAlias "Ethernet" `
-  -IPAddress 192.168.1.10 `
+  -IPAddress 192.168.1.60 `
   -PrefixLength 24 `
   -DefaultGateway 192.168.1.1
 
@@ -131,7 +131,7 @@ Set-DnsClientServerAddress -InterfaceAlias "Ethernet" `
   -ServerAddresses 192.168.1.1
 
 # Renommer le serveur et redémarrer
-Rename-Computer -NewName "SRV-CORE-01" -Restart
+Rename-Computer -NewName "SRV-CORE" -Restart
 ```
 
 ### 7. Installation du rôle AD DS
