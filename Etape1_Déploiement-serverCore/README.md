@@ -94,7 +94,10 @@ Via sconfig, l'IP statique et le DNS ont été configurés :
 # Renommer le serveur
 # -NewName : nom souhaité pour le serveur
 # -Restart : redémarre automatiquement pour appliquer le changement
-Rename-Computer -NewName "SRV-CORE-01" -Restart
+Rename-Computer -NewName "SRV-CORE" -Restart
+PS C:\Users\Administrateur> hostname
+SRV-CORE
+
 ```
 
 ```powershell
@@ -114,7 +117,13 @@ Get-WindowsUpdate -AcceptAll -Install -AutoReboot
 
 ```powershell
 # Lister les interfaces réseau disponibles
-Get-NetAdapter
+PS C:\Users\Administrateur> Get-NetAdapter
+
+Name                      InterfaceDescription                    ifIndex Status       MacAddress
+----                      --------------------                    ------- ------       ---------- 
+Ethernet                  Intel(R) PRO/1000 MT Network Connection       4 Up           BC-24-1... 
+
+
 
 # Configurer une IP statique
 # -InterfaceAlias : nom de l'interface retourné par Get-NetAdapter
@@ -130,8 +139,6 @@ New-NetIPAddress -InterfaceAlias "Ethernet" `
 Set-DnsClientServerAddress -InterfaceAlias "Ethernet" `
   -ServerAddresses 192.168.1.1
 
-# Renommer le serveur et redémarrer
-Rename-Computer -NewName "SRV-CORE" -Restart
 ```
 
 ### 6. Installation du rôle AD DS
@@ -158,10 +165,54 @@ Install-ADDSForest `
 
 ```powershell
 # Vérifier que les services AD sont bien démarrés après reboot
-Get-Service ADWS, DNS, Netlogon, NTDS | Select Name, Status
+PS C:\Users\Administrateur> Get-Service ADWS, DNS, Netlogon, NTDS | Select Name, Status
+
+Name      Status
+----      ------
+ADWS     Running
+DNS      Running
+Netlogon Running
+NTDS     Running
+
 
 # Vérifier les informations du domaine
-Get-ADDomain
+PS C:\Users\Administrateur> Get-ADDomain
+
+
+AllowedDNSSuffixes                 : {}
+ChildDomains                       : {}
+ComputersContainer                 : CN=Computers,DC=homelab,DC=local
+DeletedObjectsContainer            : CN=Deleted Objects,DC=homelab,DC=local
+DistinguishedName                  : DC=homelab,DC=local
+DNSRoot                            : homelab.local
+DomainControllersContainer         : OU=Domain Controllers,DC=homelab,DC=local
+DomainMode                         : Windows2016Domain
+DomainSID                          : S-1-5-21-20253185-3697107975-3713613610
+ForeignSecurityPrincipalsContainer : CN=ForeignSecurityPrincipals,DC=homelab,DC=local
+Forest                             : homelab.local
+InfrastructureMaster               : SRV-CORE.homelab.local
+LastLogonReplicationInterval       :
+LinkedGroupPolicyObjects           : {CN={31B2F340-016D-11D2-945F-00C04FB984F9},CN=Policies,CN=Sy 
+                                     stem,DC=homelab,DC=local}
+LostAndFoundContainer              : CN=LostAndFound,DC=homelab,DC=local
+ManagedBy                          :
+Name                               : homelab
+NetBIOSName                        : LAB
+ObjectClass                        : domainDNS
+ObjectGUID                         : 6c5b75a0-95d3-4398-9d81-a0f2f505396b
+ParentDomain                       :
+PDCEmulator                        : SRV-CORE.homelab.local
+PublicKeyRequiredPasswordRolling   : True
+QuotasContainer                    : CN=NTDS Quotas,DC=homelab,DC=local
+ReadOnlyReplicaDirectoryServers    : {}
+ReplicaDirectoryServers            : {SRV-CORE.homelab.local}
+RIDMaster                          : SRV-CORE.homelab.local
+SubordinateReferences              : {DC=ForestDnsZones,DC=homelab,DC=local,
+                                     DC=DomainDnsZones,DC=homelab,DC=local,
+                                     CN=Configuration,DC=homelab,DC=local}
+SystemsContainer                   : CN=System,DC=homelab,DC=local
+UsersContainer                     : CN=Users,DC=homelab,DC=local
+
 ```
 
 ### 7. Structure Active Directory — OUs, Utilisateurs, Groupes
@@ -176,7 +227,16 @@ New-ADOrganizationalUnit -Name "Direction"    -Path "DC=lab,DC=local"
 New-ADOrganizationalUnit -Name "Serveurs"     -Path "DC=lab,DC=local"
 
 # Vérifier les OUs créées
-Get-ADOrganizationalUnit -Filter * | Select Name, DistinguishedName
+PS C:\Users\Administrateur> Get-ADOrganizationalUnit -Filter * | Select Name, DistinguishedName
+
+Name               DistinguishedName                        
+----               -----------------
+Domain Controllers OU=Domain Controllers,DC=homelab,DC=local
+Utilisateurs       OU=Utilisateurs,DC=homelab,DC=local
+Informatique       OU=Informatique,DC=homelab,DC=local
+Direction          OU=Direction,DC=homelab,DC=local
+Serveurs           OU=Serveurs,DC=homelab,DC=local
+
 ```
 
 ```powershell
@@ -204,7 +264,17 @@ New-ADUser -Name "Admin Infra" `
   -AccountPassword (ConvertTo-SecureString "P@ssw0rd123!" -AsPlainText -Force)
 
 # Vérifier les utilisateurs créés
-Get-ADUser -Filter * | Select Name, SamAccountName, Enabled
+PS C:\Users\Administrateur> Get-ADUser -Filter * | Select Name, SamAccountName, Enabled
+
+Name           SamAccountName Enabled
+----           -------------- -------
+Administrateur Administrateur    True
+Invité         Invité           False
+krbtgt         krbtgt           False
+Alice MARTIN   amartin           True
+Admin Infra    ainfra            True
+Bob Dupont     bdupont           True
+
 ```
 
 ```powershell
@@ -226,8 +296,21 @@ Add-ADGroupMember -Identity "GRP-Utilisateurs" -Members "amartin","bdupont"
 Add-ADGroupMember -Identity "GRP-Informatique" -Members "ainfra"
 
 # Vérifier les membres
-Get-ADGroupMember -Identity "GRP-Utilisateurs" | Select Name
-Get-ADGroupMember -Identity "GRP-Informatique" | Select Name
+PS C:\Users\Administrateur> Get-ADGroupMember -Identity "GRP-Utilisateurs" | Select Name
+
+Name        
+----
+Alice MARTIN
+Bob Dupont
+
+
+PS C:\Users\Administrateur> Get-ADGroupMember -Identity "GRP-Informatique" | Select Name
+
+Name       
+----
+Admin Infra
+
+
 ```
 
 > 💡 Pour déplacer un objet AD mal placé sans le supprimer :
@@ -263,14 +346,67 @@ Set-GPRegistryValue -Name "Securite-Postes" `
   -Type DWord `
   -Value 300
 
-# Désactivation du CMD pour les utilisateurs standards
-# -Value 1 : restriction activée (0 = désactivée)
-Set-GPRegistryValue -Name "Securite-Postes" `
-  -Key "HKCU\Software\Policies\Microsoft\Windows\System" `
-  -ValueName "DisableCMD" `
-  -Type DWord `
-  -Value 1
 ```
+### 8. Configuration du ssh pour l'administration distante
+
+```powershell
+## Prérequis
+
+- Windows Server Core 2022 installé et à jour
+- **⚠️ Redémarrer le serveur après les mises à jour avant de commencer**
+
+---
+
+## 1. Installation
+
+```powershell
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+```
+
+---
+
+## 2. Démarrage du service
+
+```powershell
+Start-Service sshd
+```
+
+---
+
+## 3. Activation au démarrage
+
+```powershell
+Set-Service -Name sshd -StartupType Automatic
+```
+
+---
+
+## 4. Connexion
+
+```bash
+┌──(arch3n3my㉿kali)-[~]
+└─$ ssh administrateur@192.168.1.60                                   
+The authenticity of host '192.168.1.60 (192.168.1.60)' can't be established.
+ED25519 key fingerprint is: SHA256:WTKo/Ik80zUjwBCvlAmuyISbzmAvM4sOZoPnav3b2Fg
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '192.168.1.60' (ED25519) to the list of known hosts.
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+administrateur@192.168.1.60's password: 
+Windows PowerShell
+Copyright (C) Microsoft Corporation. Tous droits réservés.
+
+Installez la dernière version de PowerShell pour de nouvelles fonctionnalités et améliorations ! https://aka.ms/PSWindowsttps://aka.ms/PSWindows
+
+PS C:\Users\Administrateur>  
+
+```
+
+
+```
+
 
 ### 9. Politique de mot de passe et verrouillage de compte
 
@@ -299,7 +435,28 @@ Set-ADDefaultDomainPasswordPolicy -Identity "lab.local" `
   -LockoutObservationWindow 00:30:00
 
 # Vérifier la politique appliquée
-Get-ADDefaultDomainPasswordPolicy -Identity "lab.local" | Format-List *
+PS C:\Users\Administrateur> Get-ADDefaultDomainPasswordPolicy -Identity "homelab.local" | Format-List *
+
+
+ComplexityEnabled           : True
+DistinguishedName           : DC=homelab,DC=local
+LockoutDuration             : 00:30:00
+LockoutObservationWindow    : 00:30:00
+LockoutThreshold            : 5
+MaxPasswordAge              : 90.00:00:00
+MinPasswordAge              : 1.00:00:00
+MinPasswordLength           : 12
+objectClass                 : {domainDNS}
+objectGuid                  : 6c5b75a0-95d3-4398-9d81-a0f2f505396b
+PasswordHistoryCount        : 10
+ReversibleEncryptionEnabled : False
+PropertyNames               : {ComplexityEnabled, DistinguishedName, LockoutDuration,
+                              LockoutObservationWindow...}
+AddedProperties             : {}
+RemovedProperties           : {}
+ModifiedProperties          : {}
+PropertyCount               : 12
+
 ```
 
 ### 10. Configuration des sauvegardes Windows Server
@@ -310,7 +467,7 @@ Install-WindowsFeature -Name Windows-Server-Backup
 ```
 
 > ⚠️ Windows Server Backup refuse de sauvegarder sur le même disque que la source.
-> Un second disque dédié est obligatoire. Dans ce lab : disque VirtIO Block de 10 Go.
+> Un second disque dédié est ajouté depuis proxmox. Dans ce lab : disque VirtIO Block de 10 Go.
 
 ```cmd
 # Initialisation du disque de sauvegarde via diskpart
@@ -321,7 +478,7 @@ online disk
 convert gpt
 create partition primary
 format fs=ntfs label="Backups" quick
-assign letter=E
+assign letter=F
 exit
 ```
 
@@ -350,7 +507,20 @@ Set-WBPolicy -Policy $policy -Force
 Start-WBBackup -Policy $policy
 
 # Vérifier le résultat — LastBackupResultHR: 0x00000000 = succès
-Get-WBSummary
+PS C:\Users\Administrateur> Get-WBSummary  
+
+
+NextBackupTime                  : 11/03/2026 22:00:00
+NumberOfVersions                : 1
+LastSuccessfulBackupTime        : 10/03/2026 20:16:00
+LastSuccessfulBackupTargetPath  : \\?\Volume{efb0c152-7d1a-4a8c-88f9-f27c47a58bf3}
+LastSuccessfulBackupTargetLabel : WIN-R 10/03/2026 20:15:03 Disk01
+LastBackupTime                  : 11/03/2026 01:12:26
+LastBackupTarget                : WIN-R 10/03/2026 20:15:03 Disk01
+DetailedMessage                 : Un périphérique qui n’existe pas a été spécifié
+LastBackupResultHR              : 2155348165
+LastBackupResultDetailedHR      : 2147942833
+CurrentOperationStatus          : NoOperationInProgress
 ```
 
 ---
