@@ -347,7 +347,7 @@ Set-GPRegistryValue -Name "Securite-Postes" `
   -Value 300
 
 ```
-### 8. Configuration du ssh pour l'administration distante
+### 9. Configuration du ssh pour l'administration distante
 
 ```powershell
 ## Prérequis
@@ -365,7 +365,7 @@ Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 
 ---
 
-## 2. Démarrage du service
+#  Démarrage du service
 
 ```powershell
 Start-Service sshd
@@ -373,7 +373,7 @@ Start-Service sshd
 
 ---
 
-## 3. Activation au démarrage
+#  Activation au démarrage
 
 ```powershell
 Set-Service -Name sshd -StartupType Automatic
@@ -381,7 +381,7 @@ Set-Service -Name sshd -StartupType Automatic
 
 ---
 
-## 4. Connexion
+#  Connexion
 
 ```bash
 ┌──(arch3n3my㉿kali)-[~]
@@ -408,7 +408,7 @@ PS C:\Users\Administrateur>
 ```
 
 
-### 9. Politique de mot de passe et verrouillage de compte
+### 10. Politique de mot de passe et verrouillage de compte
 
 ```powershell
 # Configurer la politique de mot de passe du domaine
@@ -459,7 +459,7 @@ PropertyCount               : 12
 
 ```
 
-### 10. Configuration des sauvegardes Windows Server
+### 11. Configuration des sauvegardes Windows Server
 
 ```powershell
 # Installer la fonctionnalité de sauvegarde
