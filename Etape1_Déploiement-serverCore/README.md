@@ -329,7 +329,7 @@ Install-WindowsFeature -Name GPMC
 # Créer une GPO vide — elle n'est pas encore appliquée à quoi que ce soit
 New-GPO -Name "Securite-Postes" -Comment "Politique sécurité postes de travail"
 
-# Lier la GPO à une OU — c'est ce qui l'active réellement
+# Lier la GPO à une OU pour l'activer
 # -Enforced Yes : force l'application même si une GPO en conflit existe
 # plus bas dans la hiérarchie — évite qu'un admin local la contourne
 New-GPLink -Name "Securite-Postes" `
