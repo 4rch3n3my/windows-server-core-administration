@@ -1,20 +1,13 @@
 # Windows Server Core — Déploiement & Administration PowerShell
-
 > Déploiement d'un Windows Server en mode Core sur Proxmox VE, administré exclusivement via PowerShell et outils CLI. Projet réalisé dans le cadre d'une montée en compétences pour un poste d'Administrateur Systèmes et Réseaux.
-
 ---
-
 ## Contexte
-
 L'objectif de ce projet est de simuler un environnement de production réaliste :
 - Pas d'interface graphique → administration 100% CLI/PowerShell
 - Déploiement sur hyperviseur Proxmox VE
 - Configuration Active Directory, GPO, sauvegardes et supervision via scripts
-
 ---
-
 ## Environnement technique
-
 | Composant | Détail |
 |---|---|
 | Hyperviseur | Proxmox VE 8.x |
@@ -24,72 +17,51 @@ L'objectif de ce projet est de simuler un environnement de production réaliste 
 | Stockage sauvegarde | 10 Go (VirtIO Block) |
 | Réseau | VirtIO, IP statique |
 | Drivers | VirtIO Win ISO |
-
 ---
-
 ## Étapes du projet
-
 ### 1. Création de la VM sur Proxmox
-
 - Création VM avec firmware UEFI + TPM 2.0
 - Attachement de l'ISO Windows Server et de l'ISO VirtIO drivers en IDE
 - Disque système en VirtIO SCSI, disque sauvegarde en VirtIO Block
 - Réseau en VirtIO
-
 > ⚠️ Les lecteurs CD/DVD doivent être en IDE. Les disques durs en VirtIO SCSI ou VirtIO Block.
-
 ```bash
 # Vérification de la VM depuis le shell Proxmox
 qm status <vmid>
 ```
-
 ### 2. Installation en mode Core
-
 Lors de l'installation, sélectionner :
 ```
 Windows Server 2022 Standard (installation minimale)
 ```
-
 Résultat : invite de commande uniquement, sans interface graphique.
-
 ### 3. Installation des drivers VirtIO
-
 Après installation, monter l'ISO VirtIO comme second lecteur CD/DVD puis installer les drivers :
-
 ```cmd
 # Driver réseau — indispensable pour la connectivité
 pnputil /add-driver D:\NetKVM\2k22\amd64\*.inf /install
-
 # Driver stockage
 pnputil /add-driver D:\viostor\2k22\amd64\*.inf /install
-
 # Driver ballon mémoire — optimisation RAM dynamique
 pnputil /add-driver D:\Balloon\2k22\amd64\*.inf /install
-
 # Driver série virtuel — communications Proxmox VM
 pnputil /add-driver D:\vioserial\2k22\amd64\*.inf /install
-
 # Installer tous les drivers restants en une seule commande PowerShell
 Get-ChildItem D:\ -Recurse -Filter "*.inf" | ForEach-Object { pnputil /add-driver $_.FullName /install }
 ```
-
 ```powershell
 # Vérifier les périphériques encore en erreur après installation
 Get-PnpDevice | Where-Object {$_.Status -eq "Error"} | Select FriendlyName, InstanceId
 ```
-
 ### 4. Configuration initiale via sconfig
-
 ```cmd
 # Outil de configuration de base en mode Core
 # Permet de configurer les paramètres essentiels sans interface graphique
 sconfig
 ```
-
 Via sconfig, l'IP statique et le DNS ont été configurés :
 - IP : `192.168.1.60`
 - DNS : `1.1.1.1`
-
 ```powershell
 # Renommer le serveur
 # -NewName : nom souhaité pour le serveur
@@ -97,34 +69,24 @@ Via sconfig, l'IP statique et le DNS ont été configurés :
 Rename-Computer -NewName "SRV-CORE" -Restart
 PS C:\Users\Administrateur> hostname
 SRV-CORE
-
 ```
-
 ```powershell
 # Installer le module de gestion des mises à jour Windows
 # -Force : installe sans confirmation même si déjà présent
 Install-Module PSWindowsUpdate -Force
-
 # Lancer et installer toutes les mises à jour disponibles
 # -AcceptAll : accepte toutes les mises à jour sans confirmation manuelle
 # -Install : installe directement sans étape intermédiaire
 # -AutoReboot : redémarre automatiquement si une mise à jour l'exige
 Get-WindowsUpdate -AcceptAll -Install -AutoReboot
 ```
-
-
 ### 5. Configuration réseau via PowerShell
-
 ```powershell
 # Lister les interfaces réseau disponibles
 PS C:\Users\Administrateur> Get-NetAdapter
-
 Name                      InterfaceDescription                    ifIndex Status       MacAddress
 ----                      --------------------                    ------- ------       ---------- 
 Ethernet                  Intel(R) PRO/1000 MT Network Connection       4 Up           BC-24-1... 
-
-
-
 # Configurer une IP statique
 # -InterfaceAlias : nom de l'interface retourné par Get-NetAdapter
 # -IPAddress : adresse IP à assigner
@@ -134,20 +96,15 @@ New-NetIPAddress -InterfaceAlias "Ethernet" `
   -IPAddress 192.168.1.60 `
   -PrefixLength 24 `
   -DefaultGateway 192.168.1.1
-
 # Configurer le serveur DNS
 Set-DnsClientServerAddress -InterfaceAlias "Ethernet" `
   -ServerAddresses 192.168.1.1
-
 ```
-
 ### 6. Installation du rôle AD DS
-
 ```powershell
 # Installer le rôle Active Directory Domain Services
 # -IncludeManagementTools : installe aussi les outils d'administration PowerShell AD
 Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
-
 # Promouvoir le serveur en contrôleur de domaine
 # -DomainName : nom FQDN du domaine à créer
 # -DomainNetbiosName : nom NetBIOS court du domaine
@@ -162,23 +119,17 @@ Install-ADDSForest `
   -InstallDns `
   -Force
 ```
-
 ```powershell
 # Vérifier que les services AD sont bien démarrés après reboot
 PS C:\Users\Administrateur> Get-Service ADWS, DNS, Netlogon, NTDS | Select Name, Status
-
 Name      Status
 ----      ------
 ADWS     Running
 DNS      Running
 Netlogon Running
 NTDS     Running
-
-
 # Vérifier les informations du domaine
 PS C:\Users\Administrateur> Get-ADDomain
-
-
 AllowedDNSSuffixes                 : {}
 ChildDomains                       : {}
 ComputersContainer                 : CN=Computers,DC=homelab,DC=local
@@ -212,11 +163,8 @@ SubordinateReferences              : {DC=ForestDnsZones,DC=homelab,DC=local,
                                      CN=Configuration,DC=homelab,DC=local}
 SystemsContainer                   : CN=System,DC=homelab,DC=local
 UsersContainer                     : CN=Users,DC=homelab,DC=local
-
 ```
-
 ### 7. Structure Active Directory — OUs, Utilisateurs, Groupes
-
 ```powershell
 # Créer les unités d'organisation (OUs)
 # -Name : nom de l'OU
@@ -225,10 +173,8 @@ New-ADOrganizationalUnit -Name "Utilisateurs" -Path "DC=lab,DC=local"
 New-ADOrganizationalUnit -Name "Informatique" -Path "DC=lab,DC=local"
 New-ADOrganizationalUnit -Name "Direction"    -Path "DC=lab,DC=local"
 New-ADOrganizationalUnit -Name "Serveurs"     -Path "DC=lab,DC=local"
-
 # Vérifier les OUs créées
 PS C:\Users\Administrateur> Get-ADOrganizationalUnit -Filter * | Select Name, DistinguishedName
-
 Name               DistinguishedName                        
 ----               -----------------
 Domain Controllers OU=Domain Controllers,DC=homelab,DC=local
@@ -236,9 +182,7 @@ Utilisateurs       OU=Utilisateurs,DC=homelab,DC=local
 Informatique       OU=Informatique,DC=homelab,DC=local
 Direction          OU=Direction,DC=homelab,DC=local
 Serveurs           OU=Serveurs,DC=homelab,DC=local
-
 ```
-
 ```powershell
 # Créer des utilisateurs de test
 # -SamAccountName : identifiant de connexion
@@ -250,22 +194,18 @@ New-ADUser -Name "Alice Martin" `
   -Path "OU=Utilisateurs,DC=lab,DC=local" `
   -Enabled $true `
   -AccountPassword (ConvertTo-SecureString "P@ssw0rd123!" -AsPlainText -Force)
-
 New-ADUser -Name "Bob Dupont" `
   -SamAccountName "bdupont" `
   -Path "OU=Utilisateurs,DC=lab,DC=local" `
   -Enabled $true `
   -AccountPassword (ConvertTo-SecureString "P@ssw0rd123!" -AsPlainText -Force)
-
 New-ADUser -Name "Admin Infra" `
   -SamAccountName "ainfra" `
   -Path "OU=Informatique,DC=lab,DC=local" `
   -Enabled $true `
   -AccountPassword (ConvertTo-SecureString "P@ssw0rd123!" -AsPlainText -Force)
-
 # Vérifier les utilisateurs créés
 PS C:\Users\Administrateur> Get-ADUser -Filter * | Select Name, SamAccountName, Enabled
-
 Name           SamAccountName Enabled
 ----           -------------- -------
 Administrateur Administrateur    True
@@ -274,9 +214,7 @@ krbtgt         krbtgt           False
 Alice MARTIN   amartin           True
 Admin Infra    ainfra            True
 Bob Dupont     bdupont           True
-
 ```
-
 ```powershell
 # Créer des groupes de sécurité
 # -GroupScope Global : visible dans tout le domaine
@@ -285,57 +223,42 @@ New-ADGroup -Name "GRP-Informatique" `
   -GroupScope Global `
   -GroupCategory Security `
   -Path "OU=Informatique,DC=lab,DC=local"
-
 New-ADGroup -Name "GRP-Utilisateurs" `
   -GroupScope Global `
   -GroupCategory Security `
   -Path "OU=Utilisateurs,DC=lab,DC=local"
-
 # Ajouter les utilisateurs dans les groupes
 Add-ADGroupMember -Identity "GRP-Utilisateurs" -Members "amartin","bdupont"
 Add-ADGroupMember -Identity "GRP-Informatique" -Members "ainfra"
-
 # Vérifier les membres
 PS C:\Users\Administrateur> Get-ADGroupMember -Identity "GRP-Utilisateurs" | Select Name
-
 Name        
 ----
 Alice MARTIN
 Bob Dupont
-
-
 PS C:\Users\Administrateur> Get-ADGroupMember -Identity "GRP-Informatique" | Select Name
-
 Name       
 ----
 Admin Infra
-
-
 ```
-
 > 💡 Pour déplacer un objet AD mal placé sans le supprimer :
 > ```powershell
 > Move-ADObject -Identity "CN=GRP-Informatique,OU=Utilisateurs,DC=lab,DC=local" `
 >   -TargetPath "OU=Informatique,DC=lab,DC=local"
 > ```
-
 ### 8. Configuration des GPO
-
 ```powershell
 # Installer la console de gestion des GPO
 # sans ce rôle les cmdlets New-GPO et New-GPLink n'existent pas
 Install-WindowsFeature -Name GPMC
-
 # Créer une GPO vide — elle n'est pas encore appliquée à quoi que ce soit
 New-GPO -Name "Securite-Postes" -Comment "Politique sécurité postes de travail"
-
 # Lier la GPO à une OU pour l'activer
 # -Enforced Yes : force l'application même si une GPO en conflit existe
 # plus bas dans la hiérarchie — évite qu'un admin local la contourne
 New-GPLink -Name "Securite-Postes" `
   -Target "OU=Utilisateurs,DC=lab,DC=local" `
   -Enforced Yes
-
 # Verrouillage automatique après 5 minutes d'inactivité
 # -Key : chemin registre correspondant au paramètre
 # -Type DWord : valeur numérique entière
@@ -345,43 +268,30 @@ Set-GPRegistryValue -Name "Securite-Postes" `
   -ValueName "InactivityTimeoutSecs" `
   -Type DWord `
   -Value 300
-
 ```
-### 9. Configuration du ssh pour l'administration distante
+### 9. Configuration SSH pour l'administration distante
 
-```powershell
-## Prérequis
+> ⚠️ Appliquer toutes les mises à jour Windows et **redémarrer** avant de commencer.
 
-- Windows Server Core 2022 installé et à jour
-- **⚠️ Redémarrer le serveur après les mises à jour avant de commencer**
-
----
-
-## 1. Installation
+#### 9.1 Installation
 
 ```powershell
 Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 ```
 
----
-
-#  Démarrage du service
+#### 9.2 Démarrage du service
 
 ```powershell
 Start-Service sshd
 ```
 
----
-
-#  Activation au démarrage
+#### 9.3 Activation au démarrage
 
 ```powershell
 Set-Service -Name sshd -StartupType Automatic
 ```
 
----
-
-#  Connexion
+#### 9.4 Connexion
 
 ```bash
 ┌──(arch3n3my㉿kali)-[~]
@@ -397,19 +307,10 @@ Warning: Permanently added '192.168.1.60' (ED25519) to the list of known hosts.
 administrateur@192.168.1.60's password: 
 Windows PowerShell
 Copyright (C) Microsoft Corporation. Tous droits réservés.
-
-Installez la dernière version de PowerShell pour de nouvelles fonctionnalités et améliorations ! https://aka.ms/PSWindowsttps://aka.ms/PSWindows
-
+Installez la dernière version de PowerShell pour de nouvelles fonctionnalités et améliorations ! https://aka.ms/PSWindows
 PS C:\Users\Administrateur>  
-
 ```
-
-
-```
-
-
 ### 10. Politique de mot de passe et verrouillage de compte
-
 ```powershell
 # Configurer la politique de mot de passe du domaine
 # Note : s'applique sur le domaine entier via Default Domain Policy
@@ -424,7 +325,6 @@ Set-ADDefaultDomainPasswordPolicy -Identity "lab.local" `
   -MaxPasswordAge 90.00:00:00 `
   -MinPasswordAge 1.00:00:00 `
   -ComplexityEnabled $true
-
 # Configurer le verrouillage de compte
 # -LockoutThreshold 5 : verrouille après 5 tentatives échouées
 # -LockoutDuration 00:30:00 : verrouillage de 30 minutes puis déverrouillage auto
@@ -433,11 +333,8 @@ Set-ADDefaultDomainPasswordPolicy -Identity "lab.local" `
   -LockoutThreshold 5 `
   -LockoutDuration 00:30:00 `
   -LockoutObservationWindow 00:30:00
-
 # Vérifier la politique appliquée
 PS C:\Users\Administrateur> Get-ADDefaultDomainPasswordPolicy -Identity "homelab.local" | Format-List *
-
-
 ComplexityEnabled           : True
 DistinguishedName           : DC=homelab,DC=local
 LockoutDuration             : 00:30:00
@@ -456,19 +353,14 @@ AddedProperties             : {}
 RemovedProperties           : {}
 ModifiedProperties          : {}
 PropertyCount               : 12
-
 ```
-
 ### 11. Configuration des sauvegardes Windows Server
-
 ```powershell
 # Installer la fonctionnalité de sauvegarde
 Install-WindowsFeature -Name Windows-Server-Backup
 ```
-
 > ⚠️ Windows Server Backup refuse de sauvegarder sur le même disque que la source.
 > Un second disque dédié est ajouté depuis proxmox. Dans ce lab : disque VirtIO Block de 10 Go.
-
 ```cmd
 # Initialisation du disque de sauvegarde via diskpart
 diskpart
@@ -481,35 +373,26 @@ format fs=ntfs label="Backups" quick
 assign letter=F
 exit
 ```
-
 ```powershell
 # Créer et configurer la politique de sauvegarde
 $policy = New-WBPolicy
-
 # Définir le volume source
 $volume = Get-WBVolume -VolumePath "C:"
 Add-WBVolume -Policy $policy -Volume $volume
-
 # Définir le disque de destination
 # [1] = second disque = disque Backups de 10 Go
 $disk = (Get-WBDisk)[1]
 $target = New-WBBackupTarget -Disk $disk
 Add-WBBackupTarget -Policy $policy -Target $target
-
 # Planifier la sauvegarde quotidienne à 22h00
 Set-WBSchedule -Policy $policy -Schedule 22:00
-
 # Enregistrer la politique sur le système
 # sans cette étape elle disparaît à la fermeture de la session PowerShell
 Set-WBPolicy -Policy $policy -Force
-
 # Lancer une sauvegarde manuelle pour tester
 Start-WBBackup -Policy $policy
-
 # Vérifier le résultat — LastBackupResultHR: 0x00000000 = succès
 PS C:\Users\Administrateur> Get-WBSummary  
-
-
 NextBackupTime                  : 11/03/2026 22:00:00
 NumberOfVersions                : 1
 LastSuccessfulBackupTime        : 10/03/2026 20:16:00
@@ -517,50 +400,33 @@ LastSuccessfulBackupTargetPath  : \\?\Volume{efb0c152-7d1a-4a8c-88f9-f27c47a58bf
 LastSuccessfulBackupTargetLabel : WIN-R 10/03/2026 20:15:03 Disk01
 LastBackupTime                  : 11/03/2026 01:12:26
 LastBackupTarget                : WIN-R 10/03/2026 20:15:03 Disk01
-DetailedMessage                 : Un périphérique qui n’existe pas a été spécifié
+DetailedMessage                 : Un périphérique qui n'existe pas a été spécifié
 LastBackupResultHR              : 2155348165
 LastBackupResultDetailedHR      : 2147942833
 CurrentOperationStatus          : NoOperationInProgress
 ```
-
 ---
-
-
 ## Commandes de diagnostic fréquentes
-
 ```powershell
 # Vérifier la réplication AD
 Get-ADReplicationFailure -Scope Domain
-
 # Vérifier les services critiques
 Get-Service ADWS, DNS, Netlogon, NTDS | Select Name, Status
-
 # Table de routage
 Get-NetRoute
-
 # Tester la connectivité DNS
 Resolve-DnsName lab.local
-
 # Vérifier les GPO appliquées sur le poste
 gpresult /r
-
 # Lister les utilisateurs désactivés
 Get-ADUser -Filter {Enabled -eq $false} -Properties LastLogonDate | Select Name, LastLogonDate
-
 # Lister les comptes dont le mdp n'a pas changé depuis 90 jours
 Get-ADUser -Filter {PasswordLastSet -lt (Get-Date).AddDays(-90)} `
   -Properties PasswordLastSet | Select Name, PasswordLastSet
-
 # Vérifier les périphériques en erreur
 Get-PnpDevice | Where-Object {$_.Status -eq "Error"} | Select FriendlyName, InstanceId
 ```
-
 ---
-
-
----
-
 ## Auteur
-
 **Thomas Pichot** — Administrateur Systèmes & Réseaux  
 [LinkedIn](https://www.linkedin.com/in/p1ch0tth0m45) | Toulouse, France
